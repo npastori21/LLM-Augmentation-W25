@@ -51,29 +51,70 @@ def parse_location(location_string: str) -> dict:
         },
     #   ...
     # ]"""
+    few_shot_examples = [
+        {
+            "input": "London, United Kingdom",
+            "output": {
+                "city": "London",
+                "state": "",
+                "country": "United Kingdom",
+                "clarifications": ""
+            }
+        },
+        {
+            "input": "Detroit, United States",
+            "output":{
+                "city": "Detroit",
+                "state": "Michigan",
+                "country": "United States",
+                "clarifications": ""
+            }
+        },
+        {
+            "input": "Dallas, United States",
+            "output": {
+                "city": "Dallas",
+                "state": "Texas",
+                "country": "United States",
+                "clarifications": ""
+            }
+        }
+    ]
     #Ucomment after few show examples completed
-    """example_text = "\n".join([
+    example_text = "\n".join([
         f"Input: {ex['input']}\nJSON Output: {json.dumps(ex['output'], ensure_ascii=False)}\n"
         for ex in few_shot_examples
-    ])"""
+    ])
     #TODO: Finish prompt, include role and specific instructions for recieving and output
-    # prompt = f"""
-    #   ...
-    #   {example_text}
-    #   Now parse this user input: "{location_string}"
-    #   {format_instructions}
-    # """
+    prompt = f"""
+        You are a helpful travel assistant. You receive a location input and must produce:
+        - city
+        - state (or empty string if not applicable)
+        - country
+        - clarifications (if anything is ambiguous or missing)
 
-    #llm_response = get_llm().predict(prompt)
-    #return dict(parser.parse(llm_response))
+        Follow these few-shot examples to see how we want the JSON output structured:
+
+        {example_text}
+
+        Now parse this user input:
+        "{location_string}"
+
+        Return a JSON object with keys city, state, country, clarifications.
+
+        {format_instructions}
+        """
+
+    llm_response = get_llm().predict(prompt)
+    return dict(parser.parse(llm_response))
 
     # For now, return a placeholder:
-    return {
-        "city": "",
-        "state": "",
-        "country": "",
-        "clarifications": ":"
-    }
+    # return {
+    #     "city": "",
+    #     "state": "",
+    #     "country": "",
+    #     "clarifications": ":"
+    # }
 
 
 def parse_dates(date_string: str) -> dict:
@@ -96,15 +137,49 @@ def parse_dates(date_string: str) -> dict:
     format_instructions = parser.get_format_instructions()
 
     # TODO: Create few_shot_examples, build prompt, parse output.
-    #few_shot_examples = 
-    #example_text = 
-    #prompt = 
+    few_shot_examples = [
+        {
+            "input": "02/05/25-02/12/25",
+            "output": {
+                "start_date": "2025-02-05",
+                "end_date": "2025-02-12",
+                "clarifications": "The / character separates the different parts of the date"
+            }
+        },
+        {
+            "input": "2025-05-23 to 2025-06-01",
+            "output": {
+                "start_date": "2025-05-23",
+                "end_date": "2025-06-01",
+                "clarifications": ""
+            } 
+        }
+    ]
+    example_text = "\n".join([
+            f"Input: {ex['input']}\nJSON Output: {json.dumps(ex['output'])}"
+            for ex in few_shot_examples
+        ])
+    prompt = f"""
+                You are a travel agent bot that is designed to take input of travel 
+                start and end dates. You must produce:
+                -start date in ISO format (YYYY-MM-DD)
+                -end_date in ISO format or an empty string if not applicable
+                -clarifications if anything is ambiguous or missing
+                
+                Follow the few-shot examples to see how we want the JSON structured
+                {example_text}
+                
+                Parse this input
+                "from 2025-12-14 to 2025-12-19"
+
+                Return a JSON object with keys start_date, end_date, and clarifications.
+
+                {format_instructions}
+
+                """
     # Placeholder return:
-    return {
-        "start_date": "",
-        "end_date": "",
-        "clarifications": ""
-    }
+    llm_response = get_llm().predict(prompt)
+    return dict(parser.parse(llm_response))
 
 
 
